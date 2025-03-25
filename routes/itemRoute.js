@@ -1,13 +1,11 @@
 const express = require("express");
 const LostFound = require("../model/itemSchema.js"); // Your schema file
 const itemJoiSchema = require("../middlewares/joiSchema.js");
-const upload = require("../middlewares/multer.js");
 const isAuthenticated = require("../middlewares/authMiddleware.js");
-// const { saveItem } = require("../middlewares/itemcontroller.js");
-// const findMatches = require ("../middlewares/matchQueus.js")
+
 
 const router = express.Router();
-router.post("/", isAuthenticated, upload.single("image"), async (req, res) => {
+router.post("/", isAuthenticated,async (req, res) => {
   try {
     console.log("User Object:", req.user); // Debug: Check the user object
     console.log("User ID:", req.user ? req.user._id : "User ID is missing");
