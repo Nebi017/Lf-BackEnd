@@ -8,10 +8,11 @@ const isAuthenticated = require("../middlewares/authMiddleware.js");
 
 const router = express.Router();
 
-router.post("/", isAuthenticated, upload.single("image"), async (req, res) => {
+router.post("/", isAuthenticated, async (req, res) => {
   try {
-    console.log("User Object:", req.user); // Debug: Check the user object
+    console.log("User Object:", req.user);
     console.log("User ID:", req.user ? req.user._id : "User ID is missing");
+    
     // Validate the request body with Joi
     const { error } = itemJoiSchema.validate(req.body);
     if (error) {
@@ -24,19 +25,26 @@ router.post("/", isAuthenticated, upload.single("image"), async (req, res) => {
       return res.status(401).json({ message: "Unauthorized: User ID missing" });
     }
 
-    // If an image was uploaded, get the file path
-    const imageUrl = req.file ? req.file.path : null;
+    // Handle Base64 image (if provided)
+    let imageData = null;
+    if (req.body.image) {
+      // If the frontend sends just the Base64 part, we'll add the prefix
+      // If it sends the full data URL, we can use it directly
+      imageData = req.body.image.includes('base64,') 
+        ? req.body.image 
+        : `data:image/jpeg;base64,${req.body.image}`;
+    }
 
-    // Create a new item object based on the request data
+    // Create a new item object
     const newItem = new LostFound({
       itemName: req.body.itemName,
       category: req.body.category,
       brand: req.body.brand,
       primaryColor: req.body.primaryColor,
       secondaryColor: req.body.secondaryColor,
-      dateLostorFound: new Date(req.body.dateLostorFound), // Ensure this is a valid date
+      dateLostorFound: new Date(req.body.dateLostorFound),
       timeLostorFound: req.body.timeLostorFound,
-      image: imageUrl, // Save the image URL/path
+      image: imageData, // Store the Base64 string or data URL
       additionalInfo: req.body.additionalInfo,
       whereLostorFound: req.body.whereLostorFound,
       subcity: req.body.subcity,
@@ -47,21 +55,18 @@ router.post("/", isAuthenticated, upload.single("image"), async (req, res) => {
       contactPhone: req.body.contactPhone,
       contactEmail: req.body.contactEmail,
       status: req.body.status,
-      dateReported: new Date(), // Current date
-      userId: req.user._id, // Use req.user._id instead of request.user.id
+      dateReported: new Date(),
+      userId: req.user._id,
     });
-    // Save the new item to the database
+
     await newItem.save();
 
-    res
-      .status(201)
-      .send({ message: "Item created successfully", item: newItem });
+    res.status(201).send({ message: "Item created successfully", item: newItem });
   } catch (ex) {
     console.error("Error creating item:", ex);
     res.status(500).send({ message: "Internal server error" });
   }
 });
-
 router.get("/recent-items", async (req, res) => {
   try {
     const { status } = req.query; // "lost" or "found"
