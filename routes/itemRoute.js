@@ -5,7 +5,7 @@ const isAuthenticated = require("../middlewares/authMiddleware.js");
 
 
 const router = express.Router();
-router.post("/", isAuthenticated,async (req, res) => {
+router.post("/", isAuthenticated, upload.single("image"), async (req, res) => {
   try {
     console.log("User Object:", req.user); // Debug: Check the user object
     console.log("User ID:", req.user ? req.user._id : "User ID is missing");
@@ -59,6 +59,7 @@ router.post("/", isAuthenticated,async (req, res) => {
     res.status(500).send({ message: "Internal server error" });
   }
 });
+
 
 router.get("/recent-items", async (req, res) => {
   try {
